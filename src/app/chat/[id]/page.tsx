@@ -94,8 +94,16 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'}`}>
-              {msg.content}
+            <div className={`max-w-[80%] p-3 rounded-2xl ${
+              msg.role === 'user' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white border text-gray-800'
+            }`}>
+              {msg.role === 'assistant' ? (
+                <MarkdownMessage content={msg.content} />
+              ) : (
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              )}
             </div>
           </div>
         ))}
