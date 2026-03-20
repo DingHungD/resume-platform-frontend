@@ -1,0 +1,33 @@
+├── Dockerfile
+├── next.config.js
+├── next.config.mjs
+├── package.json
+├── postcss.config.js
+├── public
+│   └── favicon.ico
+├── src
+│   ├── app
+│   │   ├── chat
+│   │   │   └── [id]
+│   │   │       └── page.tsx
+│   │   ├── dashboard
+│   │   │   └── page.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── login
+│   │   │   └── page.tsx
+│   │   └── page.tsx
+│   ├── components
+│   │   ├── dashboard
+│   │   │   └── UploadResumeModal.tsx
+│   │   └── ui
+│   │       └── Modal.tsx
+│   ├── middleware.ts
+│   ├── services
+│   │   ├── apiClient.ts
+│   │   ├── chatService.ts
+│   │   └── resumeService.ts
+│   └── types
+│       └── chat.ts
+├── tailwind.config.js
+└── tsconfig.json
