@@ -7,7 +7,7 @@ import { Send, Loader2 } from 'lucide-react';
 import MarkdownMessage from '@/components/ui/MarkdownMessage';
 
 export default function ChatPage() {
-  const { id: resumeId } = useParams();
+  const { id: sessionId } = useParams();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -18,7 +18,7 @@ export default function ChatPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const history = await chatService.getHistory(resumeId as string);
+        const history = await chatService.getHistory(sessionId as string);
         setMessages(history);
       } catch (error) {
         console.error("無法載入歷史訊息", error);
@@ -27,7 +27,7 @@ export default function ChatPage() {
       }
     };
     loadData();
-  }, [resumeId]);
+  }, [sessionId]);
 
   // 2. 初始化 WebSocket (需帶上 Token)
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function ChatPage() {
     const token = localStorage.getItem('token');
     // 注意：這裡的路徑要對應你 main.py 裡的 /api/v1/ws/chat/{id}
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/chat/${resumeId}?token=${token}`;
+    const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/chat/${sessionId}?token=${token}`;
     
     console.log("正在連線至:", wsUrl); // 方便你偵錯
     const ws = new WebSocket(wsUrl);
@@ -61,7 +61,7 @@ export default function ChatPage() {
 
     socketRef.current = ws;
     return () => ws.close();
-  }, [resumeId, loadingHistory]);
+  }, [sessionId, loadingHistory]);
 
   // 自動捲動到底部
   useEffect(() => {

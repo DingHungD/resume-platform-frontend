@@ -1,4 +1,6 @@
+├── .gitignore
 ├── Dockerfile
+├── README.md
 ├── next.config.js
 ├── next.config.mjs
 ├── package.json
@@ -21,6 +23,7 @@
 │   │   ├── dashboard
 │   │   │   └── UploadResumeModal.tsx
 │   │   └── ui
+│   │       ├── MarkdownMessage.tsx
 │   │       └── Modal.tsx
 │   ├── middleware.ts
 │   ├── services

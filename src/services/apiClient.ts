@@ -29,8 +29,16 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // 如果收到 401，代表 Token 已失效，清除並導回登入頁
       if (typeof window !== 'undefined') {
+        // 1. 清除 LocalStorage
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        
+        // 2. 關鍵：清除 Cookie (確保與 Middleware 同步)
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        
+        // 3. 避免在 login 頁面本身重複跳轉
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

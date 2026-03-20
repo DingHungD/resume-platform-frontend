@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, Settings } from 'lucide-react';
 import Link from 'next/link';
+import Sidebar from '@/components/dashboard/Sidebar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,10 +34,11 @@ export default function RootLayout({
 
   return (
     <html lang="zh-TW">
-      <body className={`${inter.className} bg-gray-50 min-h-screen`}>
+      <body className={`${inter.className} bg-gray-50 min-h-screen flex flex-col`}>
+        {/* 頂部導覽列 */}
         {!isLoginPage && (
-          <nav className="bg-white border-b sticky top-0 z-50">
-            <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+          <nav className="bg-white border-b sticky top-0 z-50 h-16 flex-shrink-0">
+            <div className="container mx-auto px-6 h-full flex items-center justify-between">
               <Link href="/dashboard" className="font-bold text-xl text-blue-600">
                 Resume RAG
               </Link>
@@ -70,7 +72,15 @@ export default function RootLayout({
             </div>
           </nav>
         )}
-        <main>{children}</main>
+
+        {/* 主要內容區域：左側選單 + 右側內容 */}
+        <div className="flex flex-1 overflow-hidden">
+          {!isLoginPage && <Sidebar />} {/* 👈 在非登入頁面渲染側邊欄 */}
+          
+          <main className="flex-1 overflow-y-auto relative">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

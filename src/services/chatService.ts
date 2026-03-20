@@ -8,9 +8,9 @@ export interface ChatMessage {
 }
 
 export const chatService = {
-  // 獲取特定履歷的歷史對話
-  getHistory: async (resumeId: string): Promise<ChatMessage[]> => {
-    const response = await apiClient.get(`/chat/${resumeId}/history`);
+  // 獲取特定會話的歷史對話
+  getHistory: async (sessionId: string): Promise<ChatMessage[]> => {
+    const response = await apiClient.get(`/resume/session/${sessionId}/history`);
     return response.data;
   }
 };

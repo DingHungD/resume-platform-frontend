@@ -8,10 +8,11 @@ import Modal from '../ui/Modal';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void; // 上傳成功後刷新列表
+  onSuccess: (sessionId?: string) => void; // 👈 讓 onSuccess 傳回 sessionId
+  sessionId?: string; // 👈 新增：可選的現有會話 ID
 }
 
-export default function UploadResumeModal({ isOpen, onClose, onSuccess }: Props) {
+export default function UploadResumeModal({ isOpen, onClose, onSuccess, sessionId }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -33,10 +34,10 @@ export default function UploadResumeModal({ isOpen, onClose, onSuccess }: Props)
 
     setStatus('uploading');
     try {
-      await resumeService.uploadResume(file);
+      const response = await resumeService.uploadResume(file, sessionId);
       setStatus('success');
       setTimeout(() => {
-        onSuccess();
+        onSuccess(response.session_id);
         onClose();
         setFile(null);
         setStatus('idle');
