@@ -27,12 +27,24 @@ export default function UploadResumeModal({ isOpen, onClose, onSuccess, sessionI
         'text/plain'
       ];
       
-      if (!allowedTypes.includes(selectedFile.type)) {
+      // 額外檢查副檔名作為保險
+      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+      const allowedExtensions = ['pdf', 'docx', 'txt'];
+
+      if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension || '')) {
         alert('目前支援 PDF, DOCX 或 TXT 格式');
         return;
       }
+      
+      // 限制 10MB
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        alert('檔案大小不能超過 10MB');
+        return;
+      }
+
       setFile(selectedFile);
       setStatus('idle');
+      setErrorMessage('');
     }
   };
 
@@ -40,41 +52,71 @@ export default function UploadResumeModal({ isOpen, onClose, onSuccess, sessionI
     if (!file) return;
 
     setStatus('uploading');
+    setErrorMessage('');
+
     try {
+      // 調用 resumeService (內部已封裝 apiClient.post)
       const response = await resumeService.uploadResume(file, sessionId);
       
-      // 取得後端回傳的 session_id (對齊後端 ResumeRead Schema)
-      const newSessionId = response.data.session_id;
+      // 取得後端回傳的 session_id
+      // 根據 FastAPI 的慣例與 ResumeRead Schema，數據通常在 response 或 response.data 中
+      const newSessionId = response.session_id || response.data?.session_id;
 
       setStatus('success');
       
-      // 延遲執行，讓使用者看清成功狀態
+      // 延遲執行，讓使用者看清成功狀態並給予後端資料庫一點同步時間
       setTimeout(() => {
-        // 1. 通知 Sidebar 重新抓取 Session 列表
+        // 1. 通知 Sidebar 或其他組件重新抓取 Session 列表 (如果有的話)
         window.dispatchEvent(new Event('refresh-sessions'));
         
-        // 2. 執行頁面回呼 (可能是 Dashboard 刷新列表或跳轉)
+        // 2. 執行頁面回呼 (Dashboard 會執行 fetchResumes)
         onSuccess(newSessionId);
         
-        // 3. 關閉並重置
-        onClose();
-        setFile(null);
-        setStatus('idle');
+        // 3. 關閉並重置狀態
+        handleClose();
       }, 1500);
+
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("Upload error detail:", error);
+      
+      // 容錯邏輯：如果後端其實回傳了 201 Created (代表成功)，但被判斷為錯誤
+      if (error.status === 201 || error.response?.status === 201) {
+        setStatus('success');
+        setTimeout(() => {
+          onSuccess();
+          handleClose();
+        }, 1500);
+        return;
+      }
+
       setStatus('error');
-      setErrorMessage(error.response?.data?.detail || '上傳失敗，請檢查網路或檔案格式');
+      setErrorMessage(
+        error.response?.data?.detail || 
+        error.message || 
+        '上傳失敗，請檢查網路或檔案格式'
+      );
     }
   };
 
+  // 封裝重置邏輯
+  const handleClose = () => {
+    onClose();
+    // 延遲重置，避免關閉動畫中看到內容閃現
+    setTimeout(() => {
+      setFile(null);
+      setStatus('idle');
+      setErrorMessage('');
+    }, 300);
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="上傳新履歷">
+    <Modal isOpen={isOpen} onClose={handleClose} title="上傳新履歷">
       <div className="space-y-6">
-        {/* 檔案拖放/選擇區 */}
         <div 
-          className={`relative border-2 border-dashed rounded-xl p-8 transition-colors ${
-            file ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+          className={`relative border-2 border-dashed rounded-2xl p-8 transition-all ${
+            file 
+              ? 'border-blue-400 bg-blue-50/50' 
+              : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
           }`}
         >
           <input
@@ -82,51 +124,50 @@ export default function UploadResumeModal({ isOpen, onClose, onSuccess, sessionI
             accept=".pdf,.docx,.txt"
             onChange={handleFileChange}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            disabled={status === 'uploading'}
+            disabled={status === 'uploading' || status === 'success'}
           />
           
           <div className="flex flex-col items-center justify-center text-center">
             {file ? (
               <>
-                <div className="p-3 bg-blue-100 rounded-full mb-3">
+                <div className="p-4 bg-blue-100 rounded-2xl mb-3">
                   <FileText className="h-8 w-8 text-blue-600" />
                 </div>
-                <p className="text-sm font-semibold text-gray-800 truncate max-w-xs">{file.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                <p className="text-sm font-bold text-gray-800 truncate max-w-[200px]">{file.name}</p>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
               </>
             ) : (
               <>
-                <div className="p-3 bg-gray-50 rounded-full mb-3">
-                  <Upload className="h-8 w-8 text-gray-400" />
+                <div className="p-4 bg-gray-50 rounded-2xl mb-3">
+                  <Upload className="h-8 w-8 text-gray-300" />
                 </div>
-                <p className="text-sm font-medium text-gray-800">點擊或拖入檔案</p>
-                <p className="text-xs text-gray-400 mt-1 text-balance">支援 PDF, DOCX, TXT (最大 10MB)</p>
+                <p className="text-sm font-semibold text-gray-600">點擊或拖入檔案</p>
+                <p className="text-[10px] text-gray-400 mt-1">支援 PDF, DOCX, TXT (最大 10MB)</p>
               </>
             )}
           </div>
         </div>
 
-        {/* 狀態顯示與按鈕 */}
         {status === 'error' && (
-          <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm border border-red-100">
-            <AlertCircle size={16} className="shrink-0" /> 
-            <span className="break-words">{errorMessage}</span>
+          <div className="flex items-start gap-3 text-red-600 bg-red-50 p-4 rounded-xl text-xs border border-red-100 animate-in fade-in slide-in-from-top-1">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+            <span className="leading-relaxed font-medium">{errorMessage}</span>
           </div>
         )}
 
         <button
           onClick={handleUpload}
           disabled={!file || status === 'uploading' || status === 'success'}
-          className={`w-full py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-sm ${
+          className={`w-full py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-sm ${
             status === 'success' 
-              ? 'bg-green-600 text-white' 
-              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none'
+              ? 'bg-green-600 text-white cursor-default' 
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none'
           }`}
         >
           {status === 'uploading' ? (
-            <><Loader2 className="animate-spin" size={20} /> 解析中...</>
+            <><Loader2 className="animate-spin" size={20} /> AI 正在分析履歷...</>
           ) : status === 'success' ? (
-            <><CheckCircle2 size={20} /> 完成，即將跳轉</>
+            <><CheckCircle2 size={20} /> 分析成功</>
           ) : (
             '開始 AI 分析'
           )}
