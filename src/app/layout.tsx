@@ -17,8 +17,16 @@ export default function RootLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // 判斷是否在登入頁面，如果是，隱藏導覽列
+  /**
+   * 🛠️ 邏輯修正：定義哪些頁面不應該出現管理後台 UI (Nav & Sidebar)
+   * 1. 登入頁 (/login)
+   * 2. 分享頁面 (/share/[token])
+   */
   const isLoginPage = pathname === '/login';
+  const isSharePage = pathname.startsWith('/share/');
+  
+  // 綜合判斷：是否為隱藏後台 UI 的「公開頁面」
+  const hideAdminUI = isLoginPage || isSharePage;
 
   const handleLogout = () => {
     // 1. 清除 localStorage
@@ -35,8 +43,8 @@ export default function RootLayout({
   return (
     <html lang="zh-TW">
       <body className={`${inter.className} bg-gray-50 min-h-screen flex flex-col`}>
-        {/* 頂部導覽列 */}
-        {!isLoginPage && (
+        {/* 頂部導覽列：僅在非公開頁面顯示 */}
+        {!hideAdminUI && (
           <nav className="bg-white border-b sticky top-0 z-50 h-16 flex-shrink-0">
             <div className="container mx-auto px-6 h-full flex items-center justify-between">
               <Link href="/dashboard" className="font-bold text-xl text-blue-600">
@@ -75,7 +83,8 @@ export default function RootLayout({
 
         {/* 主要內容區域：左側選單 + 右側內容 */}
         <div className="flex flex-1 overflow-hidden">
-          {!isLoginPage && <Sidebar />} {/* 👈 在非登入頁面渲染側邊欄 */}
+          {/* 側邊欄：僅在非公開頁面顯示 */}
+          {!hideAdminUI && <Sidebar />} 
           
           <main className="flex-1 overflow-y-auto relative">
             {children}
