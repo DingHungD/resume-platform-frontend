@@ -10,7 +10,7 @@ export interface ChatMessage {
 export const chatService = {
   // 獲取特定會話的歷史對話
   getHistory: async (sessionId: string): Promise<ChatMessage[]> => {
-    const response = await apiClient.get(`/resume/session/${sessionId}/history`);
+    const response = await apiClient.get(`/chat/${sessionId}/history`);
     return response.data;
   }
 };

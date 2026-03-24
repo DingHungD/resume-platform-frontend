@@ -2,10 +2,10 @@ import apiClient from './apiClient';
 
 export const resumeService = {
   // 獲取履歷列表
-  listResumes: () => apiClient.get('/resume/'),
+  listResumes: async () => apiClient.get('/resume/'),
   
   // 上傳履歷
-  uploadResume: (file: File, sessionId?: string) => {
+  uploadResume: async (file: File, sessionId?: string) => {
     const formData = new FormData();
     formData.append('file', file);
     // 如果有傳入 sessionId，就加進 FormData
